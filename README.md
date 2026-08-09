@@ -8,7 +8,7 @@ One connected platform, three modules, one repository:
 | `/analytics` | 50 | Profiles and models a customer-style dataset end to end |
 | `/support_assistant` | 25 | Grounded GenAI assistant answering policy questions from Zepto's own documents |
 
-> Status: `/data_pipeline` and `/analytics` complete. `/support_assistant` in progress.
+> Status: All three modules complete.
 
 ## Requirements
 
@@ -38,7 +38,15 @@ python 02_modeling.py    # reads the same titanic.csv, models, evaluates, saves 
 ```
 
 ### 3. `/support_assistant`
-_Coming next — see `support_assistant/README.md` once added._
+See [`support_assistant/README.md`](support_assistant/README.md) for full details
+(architecture, design decisions, verified example calls). Quick start:
+```bash
+cd support_assistant
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 7860
+# in a second terminal:
+curl -X POST http://127.0.0.1:7860/ask -H "Content-Type: application/json" -d "{\"query\": \"What is your delivery fee?\"}"
+```
 
 ## Design decisions summary
 
@@ -63,6 +71,12 @@ See each module's own README for detailed reasoning. Short version:
   Forest classifiers plus a fare-prediction regression — all preprocessing fit on the
   training split only. Recommends Random Forest (highest F1) — see
   `analytics/README.md` for the full comparison table and reasoning.
+- **`/support_assistant`**: a RAG service over 8 Zepto policy documents, embedded
+  locally with `all-MiniLM-L6-v2` and stored in ChromaDB, orchestrated by a
+  3-node LangGraph pipeline (intent classification → conditional retrieval →
+  schema-validated answer). Fully gradable offline via a deterministic `MOCK_LLM`
+  path — no LLM API key required — see `support_assistant/README.md` for the
+  full architecture and verified example calls.
 
 ## Git workflow
 
